@@ -7,7 +7,7 @@ from guide_data import MASTER_GUIDE_TEXT
 # ==========================================
 # 1. API 설정 및 모델 선언
 # ==========================================
-API_KEY = "AIzaSyDlmG3pxRGtIDAy_pmcacGBCrbmyntHNnw"  # 실제 API 키를 입력하세요
+API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
 
 # 최신 gemini-2.5-flash 모델 설정
@@ -93,4 +93,5 @@ if st.button("AI 시각적 적정성 검토 시작"):
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
                 if 'uploaded_file' in locals():
+
                     genai.delete_file(uploaded_file.name)
