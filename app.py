@@ -6,6 +6,7 @@ import re
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
+from guide_data import MASTER_GUIDE_TEXT
 
 # ==========================================
 # 1. API 설정 및 모델 선언
@@ -288,4 +289,5 @@ with tab2:
                 except json.JSONDecodeError:
                     st.error("AI 응답 처리 실패 (데이터 형식 오류). 다시 시도해주세요.")
                 except Exception as e:
+
                     st.error(f"오류 발생: {e}")
