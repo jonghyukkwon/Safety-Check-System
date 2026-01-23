@@ -3,6 +3,7 @@ import google.generativeai as genai
 import json
 import io
 import re
+import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
@@ -181,12 +182,19 @@ with tab1:
                     [참조: 마스터 가이드라인 기준]
                     {MASTER_GUIDE_TEXT}
 
-                    [분석 요청 사항]
-                    첨부된 '수급업체 계획서' PDF를 다음 기준에 따라 분석 보고서를 작성하세요.
-                    1. 시각적 증빙 확인 (도장, 서명, 실제 현장 사진 유무)
-                    2. 필수 텍스트 항목 검토 (안전보건방침, 6대 위험요인 대책 등)
-                    3. 종합 등급 판정 (S/A/B/C/D) 및 감점 요인 명시
+                    1. 가이드라인에 명시된 1번부터 17번까지의 모든 항목을 빠짐없이 분석할 것.
+                    2. 각 항목별로 시각적 증빙(직인, 서명, 사진 등)과 텍스트 내용을 종합하여 점수를 부여할 것.
+                    3. 결과는 반드시 아래와 같은 'Markdown 표' 형식으로 출력할 것.
+
+                    | 번호 | 평가 항목 | 점수(0~10점) | 분석 코멘트 및 근거 |
+                    | :--- | :--- | :--- | :--- |
+                    | 1 | ... | ... | ... |
+                    ...
+                    | 17 | ... | ... | ... |
+
+                    4. 표 하단에 '종합 등급(S~D)'과 '전체 총평' 및 '개선 권고 사항'을 요약하여 작성할 것.
                     """
+
                     
                     response = eval_model.generate_content([prompt, uploaded_file])
                     
@@ -291,3 +299,4 @@ with tab2:
                 except Exception as e:
 
                     st.error(f"오류 발생: {e}")
+
