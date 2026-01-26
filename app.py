@@ -230,60 +230,55 @@ with tab1:
 
                     # 4. JSON 파싱 및 결과 출력
                     raw_text = response.text
-                    json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
-
+                  json_pattern = re.compile(r'\[.*\]', re.DOTALL)
+                    json_match = json_pattern.search(raw_text)
+                    
                     if json_match:
-                        eval_data = json.loads(json_match.group(0))
+                        clean_json = json_match.group(0)
+                        # 혹시 모를 제어 문자 및 줄바꿈 정리
+                        clean_json = clean_json.replace('\n', ' ').replace('\r', '')
+                        eval_data = json.loads(clean_json)
                         
-                        # 점수 합계
                         total_score = sum(item['score'] for item in eval_data)
                         
-                        # 등급 산정
                         st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
                         
-
+                        # 자동 총평
                         if total_score >= 90:
-                            st.success(f"✅ **[고위험군 / 일반군 모두 적격]**\n\n이 업체는 **90점 이상**을 획득하여, 화재·폭발·밀폐작업 등 고위험 작업을 포함한 모든 도급 공사를 수행할 자격이 있습니다.")
-                        
+                            st.success(f"✅ **[고위험군/일반군 모두 적격]**")
                         elif 80 <= total_score < 90:
-                            st.warning(f"⚠️ **[조건부 적격]**\n\n- **일반군(일반 공사):** ✅ **적격** (80점 이상 충족)\n- **고위험군(화기/밀폐):** ❌ **부적격** (90점 미만)\n\n※ 화재, 폭발, 밀폐 작업이 포함된 공사에는 선정할 수 없습니다.")
-                            
+                            st.warning(f"⚠️ **[일반군 적격 / 고위험군 부적격]**")
                         elif 70 <= total_score < 80:
-                            st.error(f"❌ **[부적격]**\n\n이 업체는 **80점 미만**으로, 일반 도급 공사 선정 기준을 충족하지 못했습니다.")
-                            
-                        else: # 70점 미만
-                            st.error(f"🚫 **[절대 선정 불가]**\n\n총점 **{total_score}점** (70점 미만)입니다. 규정에 따라 어떠한 경우에도 도급 업체로 선정할 수 없습니다.")
+                            st.error(f"❌ **[부적격]** (80점 미달)")
+                        else:
+                            st.error(f"🚫 **[절대 선정 불가]** (70점 미만)")
                         
                         st.markdown("---")
-                    
-                        # 테이블 데이터 변환
+                        
                         display_data = []
                         for item in eval_data:
                             display_data.append({
                                 "항목": f"{item['item_no']}. {item['category']}",
-                                "배점": f"{item['score']} / {item['max_score']}",
+                                "점수": f"{item['score']} / {item['max_score']}",
                                 "등급": item['judgment'],
                                 "판단 근거": item['evidence']
                             })
                         st.table(display_data)
                     else:
                         st.error("데이터 형식을 불러오지 못했습니다.")
-                        st.text(raw_text)
+            
 
                     # 뒷정리
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path): os.remove(temp_path)
 
+              except json.JSONDecodeError as je:
+                    st.error(f"데이터 파싱 오류: {je}")
+                    st.info("AI의 응답이 불완전합니다. '정량 평가' 버튼을 한 번 더 눌러주세요.")
+                    st.expander("AI 원문 보기").text(raw_text)
                 except Exception as e:
-                    st.error(f"평가 중 오류 발생: {e}")
-
-                    # 파일 정리
-                    genai.delete_file(uploaded_file.name)
-                    if os.path.exists(temp_path):
-                        os.remove(temp_path)
-
-                except Exception as e:
-                    st.error(f"오류가 발생했습니다: {e}")
+                    st.error(f"시스템 오류: {e}")
+                    if os.path.exists(temp_path): os.remove(temp_path)
 
 
 # --- TAB 2: 엑셀 자동 생성 (NEW) ---
@@ -484,6 +479,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
