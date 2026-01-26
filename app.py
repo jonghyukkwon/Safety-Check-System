@@ -235,8 +235,8 @@ with tab1:
                         total_score = sum(item['score'] for item in eval_data)
                         
                         # 등급 산정
-                      st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
-                        st.markdown("---")
+                        st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
+                        
 
                         if total_score >= 90:
                             st.success(f"✅ **[고위험군 / 일반군 모두 적격]**\n\n이 업체는 **90점 이상**을 획득하여, 화재·폭발·밀폐작업 등 고위험 작업을 포함한 모든 도급 공사를 수행할 자격이 있습니다.")
@@ -370,6 +370,7 @@ with tab2:
                 except Exception as e:
 
                     st.error(f"오류 발생: {e}")
+
 
 
 
