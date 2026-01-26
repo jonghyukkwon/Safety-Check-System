@@ -26,6 +26,13 @@ generation_config = {
     "max_output_tokens": 8000,
 }
 
+creative_config = {
+    "temperature": 0.2, # 위험성평가 생성은 약간의 창의성이 필요하므로 0.2로 설정
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8000,
+}
+
 MODEL_ID = "models/gemini-2.5-flash"
 
 # ==========================================
@@ -490,6 +497,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
