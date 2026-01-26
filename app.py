@@ -285,6 +285,8 @@ with tab1:
 
                 except json.JSONDecodeError:
                     st.error("AI 응답을 해석하는 데 실패했습니다.")
+                    st.warning("아래는 AI가 실제로 보낸 답변입니다. 내용을 확인해보세요:")
+                        st.text(response.text)
                 except Exception as e:
                     st.error(f"오류 발생: {e}")
                     if os.path.exists(temp_path): os.remove(temp_path)
@@ -487,6 +489,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
