@@ -215,8 +215,7 @@ with tab1:
                     4. **중대재해(17번)**: '해당없음' 또는 '무재해'라는 명확한 텍스트나 증명서가 없으면, 확인 불가로 간주하여 0점 처리.
 
                     [출력 형식]
-                  반드시 아래 포맷을 지키되, `evidence` 필드에 PDF에서 찾은 문장을 그대로 인용하십시오.
-                  JSON 작성 시 'evidence' 내용에 줄바꿈(\n)을 절대 넣지 마세요. 모든 내용은 반드시 '한 줄'로 작성하세요. 
+                  
                     [
                         {{
                             "item_no": 1,
@@ -234,25 +233,15 @@ with tab1:
                    # 3. AI 실행
                     response = eval_model.generate_content([prompt, uploaded_file])
                     
-                    # 4. JSON 파싱 (정규표현식 불필요)
-                    # response_mime_type 덕분에 response.text는 무조건 유효한 JSON입니다.
+                    # 4. JSON 파싱
                     eval_data = json.loads(response.text)
-
-                    # [안전장치] 만약 AI가 리스트가 아니라 딕셔너리(예: {"result": [...]})로 줄 경우 처리
-                    if isinstance(eval_data, dict):
-                        # 값 중에 리스트인 것을 찾음
-                        for value in eval_data.values():
-                            if isinstance(value, list):
-                                eval_data = value
-                                break
+                                
+                    total_score = sum(item['score'] for item in eval_data)
+                        
+                    st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
+                    st.markdown("---")
                     
-                    # 데이터가 리스트인지 최종 확인
-                    if isinstance(eval_data, list):
-                        total_score = sum(item['score'] for item in eval_data)
-                        
-                        st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
-                        
-                        # 자동 총평 출력
+                    # 자동 총평 출력
                         if total_score >= 90:
                             st.success("✅ **[고위험군 / 일반군 모두 적격]**")
                         elif 80 <= total_score < 90:
@@ -262,7 +251,7 @@ with tab1:
                         else:
                             st.error("🚫 **[절대 선정 불가]** (70점 미만)")
                         
-                        st.markdown("---")
+                    st.markdown("---")
                         
                         # 테이블 데이터 구성
                         display_data = []
@@ -271,7 +260,7 @@ with tab1:
                                 "항목": f"{item['item_no']}. {item['category']}",
                                 "점수": f"{item['score']} / {item['max_score']}",
                                 "등급": item['judgment'],
-                                "판단 근거": item['evidence']
+                                "근거": item['evidence']
                             })
                         st.table(display_data)
 
@@ -283,11 +272,7 @@ with tab1:
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path): os.remove(temp_path)
 
-                except json.JSONDecodeError:
-                    st.error("AI 응답을 해석하는 데 실패했습니다.")
-                    st.warning("아래는 AI가 실제로 보낸 답변입니다. 내용을 확인해보세요:")
-                    st.text(response.text)
-                except Exception as e:
+                    except Exception as e:
                     st.error(f"오류 발생: {e}")
                     if os.path.exists(temp_path): os.remove(temp_path)
 
@@ -489,6 +474,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
