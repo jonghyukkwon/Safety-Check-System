@@ -242,14 +242,14 @@ with tab1:
                     st.markdown("---")
                     
                     # 자동 총평 출력
-                        if total_score >= 90:
-                            st.success("✅ **[고위험군 / 일반군 모두 적격]**")
-                        elif 80 <= total_score < 90:
-                            st.warning("⚠️ **[일반군 적격 / 고위험군 부적격]**")
-                        elif 70 <= total_score < 80:
-                            st.error("❌ **[부적격]** (80점 미달)")
-                        else:
-                            st.error("🚫 **[절대 선정 불가]** (70점 미만)")
+                    if total_score >= 90:
+                        st.success("✅ **[고위험군 / 일반군 모두 적격]**")
+                    elif 80 <= total_score < 90:
+                        st.warning("⚠️ **[일반군 적격 / 고위험군 부적격]**")
+                    elif 70 <= total_score < 80:
+                        st.error("❌ **[부적격]** (80점 미달)")
+                    else:
+                        st.error("🚫 **[절대 선정 불가]** (70점 미만)")
                         
                     st.markdown("---")
                         
@@ -474,6 +474,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
