@@ -149,7 +149,7 @@ def generate_excel_from_scratch(p_info, risk_data):
 st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
 st.title("🏨 호텔 안전보건 통합 관리 시스템")
 
-tab1, tab2 = st.tabs(["📑 적격수급업체 평가", "📊 위험성평가 엑셀 생성"])
+tab1, tab2, tab3 = st.tabs(["📑 적격수급업체 평가", "📊 위험성평가 자동 생성", "📑 안전보건관리계획서 기반 위험성평가 생성"])
 
 # --- TAB 1: 기존 코드 (유지) ---
 
@@ -480,5 +480,6 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
