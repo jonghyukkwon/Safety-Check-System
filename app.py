@@ -160,7 +160,13 @@ with tab1:
     # 모델 설정 (평가용)
     eval_model = genai.GenerativeModel(
         model_name=MODEL_ID,
-        generation_config=generation_config, # temperature=0.0 필수
+        generation_config={
+        "temperature": 0.0,
+        "top_p": 1,
+        "top_k": 1,
+        "max_output_tokens": 8000,
+        "response_mime_type": "application/json",
+    }
         system_instruction=(
         "당신은 창의성이 없는 '안전보건 점수 계산기'입니다. "
             "문서를 해석하려 하지 말고, 텍스트에 키워드가 있는지만 확인하십시오. "
@@ -217,7 +223,7 @@ with tab1:
                             "category": "안전보건관리 인력",
                             "score": 1,
                             "max_score": 5,
-                            "evidence": "[페이지 4] 조직도는 첨부되었으나, 본사 안전팀의 정기 지원 활동에 대한 구체적 서술이 없음. (방어적 채점 적용)",
+                            "evidence": "조직도는 첨부되었으나, 본사 안전팀의 정기 지원 활동에 대한 구체적 서술이 없음.",
                             "judgment": "미흡"
                         }},
                         ... (17번까지 반복)
@@ -483,6 +489,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
