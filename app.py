@@ -162,7 +162,7 @@ with tab1:
 
     # 1. 모델 설정
     eval_model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-pro",
+        model_name="models/gemini-2.5-flash",
         generation_config={
             "temperature": 0.0,
             "response_mime_type": "application/json",
@@ -490,6 +490,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
