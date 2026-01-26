@@ -18,6 +18,14 @@ except:
     API_KEY = "YOUR_GEMINI_API_KEY" # 로컬 테스트용 키
 
 genai.configure(api_key=API_KEY)
+
+generation_config = {
+    "temperature": 0.0,
+    "top_p": 1,
+    "top_k": 1,
+    "max_output_tokens": 8000,
+}
+
 MODEL_ID = "models/gemini-2.5-flash"
 
 # ==========================================
@@ -147,25 +155,26 @@ tab1, tab2 = st.tabs(["📑 적격수급업체 평가", "📊 위험성평가 �
 
 with tab1:
     st.header("1. 수급업체 안전보건관리계획서 적정성 검토")
-    st.info("업체가 제출한 PDF 계획서를 가이드라인과 대조하여 분석합니다.")
+    st.info("업체가 제출한 계획서를 가이드라인과 대조하여 분석합니다.")
     
     # 모델 설정 (평가용)
     eval_model = genai.GenerativeModel(
         model_name=MODEL_ID,
         system_instruction=(
-            "당신은 대한민국 산업안전보건법 및 적격수급업체 평가 전문가입니다. "
+            "당신은 감정이 없는 냉철한 대한민국 산업안전보건법 및 적격수급업체 평가 심사 전문가입니다. "
+            "오직 가이드라인 기준표에 의거하여 기계적으로 점수를 매기십시오."
             "제공된 PDF 문서를 텍스트뿐만 아니라 시각적으로도 완벽히 분석하세요. "
             "특히 도장(직인), 서명, 현장 사진 증빙 등을 확인하여 가이드라인 준수 여부를 판정해야 합니다."
         )
     )
 
-    user_file = st.file_uploader("업체 제출 계획서(PDF) 업로드", type=["pdf"], key="eval_upload")
+    user_file = st.file_uploader("업체 제출 계획서 업로드", type=["pdf"], key="eval_upload")
 
     if st.button("적정성 검토 시작", key="eval_btn"):
         if not user_file:
             st.warning("파일을 업로드해 주세요.")
         else:
-            with st.spinner("Gemini가 문서의 이미지와 내용을 정밀 분석 중..."):
+            with st.spinner("AI가 문서의 이미지와 내용을 정밀 분석 중..."):
                 try:
                     # 임시 파일 처리
                     temp_path = "temp_upload.pdf"
@@ -179,34 +188,91 @@ with tab1:
                         uploaded_file = genai.get_file(uploaded_file.name)
 
                     prompt = f"""
+                    
                     [참조: 마스터 가이드라인 기준]
                     {MASTER_GUIDE_TEXT}
                     
                     *[분석 핵심 원칙: 맥락 일치성 검토]
                     **가장 중요:** 분석 시작 전, PDF에 명시된 '공사 제목'과 '공사 내용'을 통해 본 작업의 [주요 공종]을 확정하세요. 
                     만약 특정 항목에 텍스트가 입력되어 있더라도, 확정된 공사 내용과 전혀 관련 없는 엉뚱한 내용(예: 전기 공사인데 용접 작업 내용만 기재 등)이 기입되어 있다면 해당 항목은 0점 처리하고 코멘트에 '공종 부적합'임을 명시하세요.
+
+                    [채점 원칙]
+                    1. **증거 기반**: 반드시 PDF 내에서 발견된 근거(Evidence)를 찾아 점수를 부여하세요.
+                    2. **점수 기준**: 가이드라인에 명시된 배점(예: 1, 3, 5, 10)을 우선적으로 부여하세요.
+                    3. **중대재해(17번)**: 계획서에 중대재해 이력이 없으면 0점, 있으면 -40점입니다.
+                    4. 가이드라인에 명시된 1번부터 17번까지의 모든 항목을 빠짐없이 분석할 것.
+                    5. 각 항목별로 시각적 증빙(직인, 서명, 사진 등)과 텍스트 내용을 종합하여 점수를 부여할 것.
+                    6. 표 하단에 '종합 등급(S~D)'과 '전체 총평' 및 '개선 권고 사항'을 요약하여 작성할 것.
+
+                    [출력 형식]
+                    결과는 **반드시 아래 JSON 리스트 형식**으로만 출력하세요. (Markdown 표 아님)
                     
-                    1. 가이드라인에 명시된 1번부터 17번까지의 모든 항목을 빠짐없이 분석할 것.
-                    2. 각 항목별로 시각적 증빙(직인, 서명, 사진 등)과 텍스트 내용을 종합하여 점수를 부여할 것.
-                    3. 결과는 반드시 아래와 같은 'Markdown 표' 형식으로 출력할 것.
-
-                    | 번호 | 평가 항목 | 점수(0~10점) | 분석 코멘트 및 근거 |
-                    | :--- | :--- | :--- | :--- |
-                    | 1 | ... | ... | ... |
-                    ...
-                    | 17 | ... | ... | ... |
-
-                    4. 표 하단에 '종합 등급(S~D)'과 '전체 총평' 및 '개선 권고 사항'을 요약하여 작성할 것.
-                    5. 데이터가 부족하여 확인할 수 없는 항목은 '해당없음' 정보 확인시 만점을, 공란인 경우 '증빙 미비'로 표기하고 0점 처리할 것"
+                    [
+                        {{
+                            "item_no": 1,
+                            "category": "안전보건관리 인력",
+                            "score": 5,
+                            "max_score": 5,
+                            "evidence": "조직도상 본사 안전팀의 월 1회 기술지원 계획이 확인됨.",
+                            "judgment": "우수"
+                        }},
+                        ... (17번까지 반복)
+                    ]
+             
                     """
 
-                    
+                    # 3. AI 실행
                     response = eval_model.generate_content([prompt, uploaded_file])
+
+                    # 4. JSON 파싱 및 결과 출력
+                    raw_text = response.text
+                    json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
+
+                    if json_match:
+                        eval_data = json.loads(json_match.group(0))
+                        
+                        # 점수 합계
+                        total_score = sum(item['score'] for item in eval_data)
+                        
+                        # 등급 산정
+                      st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
+                        st.markdown("---")
+
+                        if total_score >= 90:
+                            st.success(f"✅ **[고위험군 / 일반군 모두 적격]**\n\n이 업체는 **90점 이상**을 획득하여, 화재·폭발·밀폐작업 등 고위험 작업을 포함한 모든 도급 공사를 수행할 자격이 있습니다.")
+                        
+                        elif 80 <= total_score < 90:
+                            st.warning(f"⚠️ **[조건부 적격]**\n\n- **일반군(일반 공사):** ✅ **적격** (80점 이상 충족)\n- **고위험군(화기/밀폐):** ❌ **부적격** (90점 미만)\n\n※ 화재, 폭발, 밀폐 작업이 포함된 공사에는 선정할 수 없습니다.")
+                            
+                        elif 70 <= total_score < 80:
+                            st.error(f"❌ **[부적격]**\n\n이 업체는 **80점 미만**으로, 일반 도급 공사 선정 기준을 충족하지 못했습니다.")
+                            
+                        else: # 70점 미만
+                            st.error(f"🚫 **[절대 선정 불가]**\n\n총점 **{total_score}점** (70점 미만)입니다. 규정에 따라 어떠한 경우에도 도급 업체로 선정할 수 없습니다.")
+                        
+                        st.markdown("---")
                     
-                    st.success("분석 완료!")
-                    st.markdown("---")
-                    st.markdown(response.text)
-                    
+                        # 테이블 데이터 변환
+                        display_data = []
+                        for item in eval_data:
+                            display_data.append({
+                                "항목": f"{item['item_no']}. {item['category']}",
+                                "배점": f"{item['score']} / {item['max_score']}",
+                                "등급": item['judgment'],
+                                "판단 근거": item['evidence']
+                            })
+                        st.table(display_data)
+                    else:
+                        st.error("데이터 형식을 불러오지 못했습니다.")
+                        st.text(raw_text)
+
+                    # 뒷정리
+                    genai.delete_file(uploaded_file.name)
+                    if os.path.exists(temp_path): os.remove(temp_path)
+
+                except Exception as e:
+                    st.error(f"평가 중 오류 발생: {e}")
+
                     # 파일 정리
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path):
@@ -304,6 +370,7 @@ with tab2:
                 except Exception as e:
 
                     st.error(f"오류 발생: {e}")
+
 
 
 
