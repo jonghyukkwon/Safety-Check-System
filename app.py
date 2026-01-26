@@ -210,7 +210,7 @@ with tab1:
 
                     [출력 형식]
                   반드시 아래 포맷을 지키되, `evidence` 필드에 PDF에서 찾은 문장을 그대로 인용하십시오.
-                    
+                  JSON 작성 시 'evidence' 내용에 줄바꿈(\n)을 절대 넣지 마세요. 모든 내용은 반드시 '한 줄'로 작성하세요. 
                     [
                         {{
                             "item_no": 1,
@@ -230,31 +230,34 @@ with tab1:
 
                     # 4. JSON 파싱 및 결과 출력
                     raw_text = response.text
-                    json_pattern = re.compile(r'\[.*\]', re.DOTALL)
-                    json_match = json_pattern.search(raw_text)
+                    json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
                     
                     if json_match:
                         clean_json = json_match.group(0)
-                        # 혹시 모를 제어 문자 및 줄바꿈 정리
-                        clean_json = clean_json.replace('\n', ' ').replace('\r', '')
+                        # 2. 제어 문자 및 줄바꿈 강제 제거 (파싱 에러의 주원인)
+                        clean_json = re.sub(r'[\r\n\t]', ' ', clean_json)
+                        # 3. 연속된 공백 하나로 통합
+                        clean_json = re.sub(r'\s+', ' ', clean_json)
+                        
                         eval_data = json.loads(clean_json)
                         
                         total_score = sum(item['score'] for item in eval_data)
                         
                         st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
                         
-                        # 자동 총평
+                        # 자동 총평 출력
                         if total_score >= 90:
-                            st.success(f"✅ **[고위험군/일반군 모두 적격]**")
+                            st.success("✅ **[고위험군 / 일반군 모두 적격]**")
                         elif 80 <= total_score < 90:
-                            st.warning(f"⚠️ **[일반군 적격 / 고위험군 부적격]**")
+                            st.warning("⚠️ **[일반군 적격 / 고위험군 부적격]**")
                         elif 70 <= total_score < 80:
-                            st.error(f"❌ **[부적격]** (80점 미달)")
+                            st.error("❌ **[부적격]** (80점 미달)")
                         else:
-                            st.error(f"🚫 **[절대 선정 불가]** (70점 미만)")
+                            st.error("🚫 **[절대 선정 불가]** (70점 미만)")
                         
                         st.markdown("---")
                         
+                        # 테이블 데이터 구성
                         display_data = []
                         for item in eval_data:
                             display_data.append({
@@ -264,20 +267,21 @@ with tab1:
                                 "판단 근거": item['evidence']
                             })
                         st.table(display_data)
+
                     else:
-                        st.error("데이터 형식을 불러오지 못했습니다.")
-            
+                        st.error("AI 응답에서 평가 데이터를 추출할 수 없습니다.")
 
                     # 뒷정리
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path): os.remove(temp_path)
 
                 except json.JSONDecodeError as je:
-                    st.error(f"데이터 파싱 오류: {je}")
-                    st.info("AI의 응답이 불완전합니다. '정량 평가' 버튼을 한 번 더 눌러주세요.")
-                    st.expander("AI 원문 보기").text(raw_text)
+                    st.error(f"데이터 읽기 오류: {je}")
+                    st.info("AI의 응답 형식이 불안정합니다. 잠시 후 다시 버튼을 눌러주세요.")
+                    with st.expander("AI 응답 원문 확인"):
+                        st.code(raw_text)
                 except Exception as e:
-                    st.error(f"시스템 오류: {e}")
+                    st.error(f"오류 발생: {e}")
                     if os.path.exists(temp_path): os.remove(temp_path)
 
 
@@ -479,6 +483,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
