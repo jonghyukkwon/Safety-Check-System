@@ -253,16 +253,16 @@ with tab1:
                         
                     st.markdown("---")
                         
-                        # 테이블 데이터 구성
-                        display_data = []
-                        for item in eval_data:
-                            display_data.append({
-                                "항목": f"{item['item_no']}. {item['category']}",
-                                "점수": f"{item['score']} / {item['max_score']}",
-                                "등급": item['judgment'],
-                                "근거": item['evidence']
-                            })
-                        st.table(display_data)
+                    # 테이블 데이터 구성
+                    display_data = []
+                    for item in eval_data:
+                        display_data.append({
+                            "항목": f"{item['item_no']}. {item['category']}",
+                            "점수": f"{item['score']} / {item['max_score']}",
+                            "등급": item['judgment'],
+                            "근거": item['evidence']
+                        })
+                    st.table(display_data)
 
                     else:
                         st.error("AI가 올바른 리스트 형식의 데이터를 반환하지 않았습니다.")
@@ -474,6 +474,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
