@@ -272,7 +272,7 @@ with tab1:
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path): os.remove(temp_path)
 
-              except json.JSONDecodeError as je:
+                except json.JSONDecodeError as je:
                     st.error(f"데이터 파싱 오류: {je}")
                     st.info("AI의 응답이 불완전합니다. '정량 평가' 버튼을 한 번 더 눌러주세요.")
                     st.expander("AI 원문 보기").text(raw_text)
@@ -479,6 +479,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
