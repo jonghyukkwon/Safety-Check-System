@@ -166,7 +166,7 @@ with tab1:
         "top_k": 1,
         "max_output_tokens": 8000,
         "response_mime_type": "application/json",
-    }
+    },
         system_instruction=(
         "당신은 창의성이 없는 '안전보건 점수 계산기'입니다. "
             "문서를 해석하려 하지 말고, 텍스트에 키워드가 있는지만 확인하십시오. "
@@ -231,22 +231,23 @@ with tab1:
              
                     """
 
-                    # 3. AI 실행
+                   # 3. AI 실행
                     response = eval_model.generate_content([prompt, uploaded_file])
-
-                    # 4. JSON 파싱 및 결과 출력
-                    raw_text = response.text
-                    json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
                     
-                    if json_match:
-                        clean_json = json_match.group(0)
-                        # 2. 제어 문자 및 줄바꿈 강제 제거 (파싱 에러의 주원인)
-                        clean_json = re.sub(r'[\r\n\t]', ' ', clean_json)
-                        # 3. 연속된 공백 하나로 통합
-                        clean_json = re.sub(r'\s+', ' ', clean_json)
-                        
-                        eval_data = json.loads(clean_json)
-                        
+                    # 4. JSON 파싱 (정규표현식 불필요)
+                    # response_mime_type 덕분에 response.text는 무조건 유효한 JSON입니다.
+                    eval_data = json.loads(response.text)
+
+                    # [안전장치] 만약 AI가 리스트가 아니라 딕셔너리(예: {"result": [...]})로 줄 경우 처리
+                    if isinstance(eval_data, dict):
+                        # 값 중에 리스트인 것을 찾음
+                        for value in eval_data.values():
+                            if isinstance(value, list):
+                                eval_data = value
+                                break
+                    
+                    # 데이터가 리스트인지 최종 확인
+                    if isinstance(eval_data, list):
                         total_score = sum(item['score'] for item in eval_data)
                         
                         st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
@@ -275,21 +276,18 @@ with tab1:
                         st.table(display_data)
 
                     else:
-                        st.error("AI 응답에서 평가 데이터를 추출할 수 없습니다.")
+                        st.error("AI가 올바른 리스트 형식의 데이터를 반환하지 않았습니다.")
+                        st.json(eval_data) # 디버깅용 데이터 출력
 
                     # 뒷정리
                     genai.delete_file(uploaded_file.name)
                     if os.path.exists(temp_path): os.remove(temp_path)
 
-                except json.JSONDecodeError as je:
-                    st.error(f"데이터 읽기 오류: {je}")
-                    st.info("AI의 응답 형식이 불안정합니다. 잠시 후 다시 버튼을 눌러주세요.")
-                    with st.expander("AI 응답 원문 확인"):
-                        st.code(raw_text)
+                except json.JSONDecodeError:
+                    st.error("AI 응답을 해석하는 데 실패했습니다.")
                 except Exception as e:
                     st.error(f"오류 발생: {e}")
                     if os.path.exists(temp_path): os.remove(temp_path)
-
 
 # --- TAB 2: 엑셀 자동 생성 (NEW) ---
 with tab2:
@@ -489,6 +487,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
