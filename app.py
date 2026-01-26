@@ -230,7 +230,7 @@ with tab1:
 
                     # 4. JSON 파싱 및 결과 출력
                     raw_text = response.text
-                  json_pattern = re.compile(r'\[.*\]', re.DOTALL)
+                    json_pattern = re.compile(r'\[.*\]', re.DOTALL)
                     json_match = json_pattern.search(raw_text)
                     
                     if json_match:
@@ -479,6 +479,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
