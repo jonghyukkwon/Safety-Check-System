@@ -373,5 +373,112 @@ with tab2:
 
 
 
+# TAB 3: 위험성평가 엑셀 생성 (PDF 기반 - NEW)
+# ------------------------------------------------------------------------------
+with tab3:
+    st.header("3. 안전보건관리계획서 기반 위험성평가 자동 생성")
+    st.info("업로드한 계획서의 **공사 개요**와 **작업 내용**을 AI가 스스로 분석하여, 위험성평가 엑셀 파일을 만들어줍니다.")
+
+    pdf_file = st.file_uploader("안전보건관리계획서(PDF) 업로드", type=["pdf"], key="risk_pdf_upload")
+    
+    if st.button("🚀 PDF 분석 및 엑셀 생성", key="pdf_risk_btn", type="primary"):
+        if not pdf_file:
+            st.warning("먼저 PDF 파일을 업로드해주세요.")
+        else:
+            with st.spinner("AI가 계획서를 분석하여 공사 정보와 위험요인을 추출하고 있습니다..."):
+                temp_pdf_path = "temp_plan.pdf"
+                try:
+                    # 1. PDF 업로드
+                    with open(temp_pdf_path, "wb") as f:
+                        f.write(pdf_file.getbuffer())
+                    
+                    uploaded_pdf = genai.upload_file(temp_pdf_path, mime_type="application/pdf")
+                    while uploaded_pdf.state.name == "PROCESSING":
+                        time.sleep(1)
+                        uploaded_pdf = genai.get_file(uploaded_pdf.name)
+
+                    # 2. AI 분석 모델 호출
+                    # (창의성 설정 적용: 위험요인 도출 시 유연성 필요)
+                    pdf_risk_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
+
+                    prompt = """
+                    첨부된 [안전보건관리계획서] PDF를 정밀 분석하여, 아래 두 가지 정보를 JSON 형식으로 추출 및 생성하세요.
+
+                    1. **공사 개요 정보 추출**: PDF 내에서 공사명, 현장 위치(장소), 공사 기간, 주요 작업 내용을 찾아내세요.
+                       (만약 정확한 기간이나 장소가 명시되지 않았다면 'PDF 내 미기재'로 표기할 것)
+                    
+                    2. **위험성평가 데이터 생성**: 
+                       - 분석된 '작업 내용'과 '현장 사진/도면' 등을 바탕으로 예상되는 주요 위험요인을 7가지 이상 도출하세요.
+                       - 각 위험요인에 대해 구체적인 안전 대책을 수립하세요.
+
+                    [필수 출력 형식 (JSON Only)]
+                    반드시 아래 JSON 구조를 엄격히 지켜서 출력하세요. Markdown 코드는 제외하세요.
+
+                    {
+                        "project_info": {
+                            "name": "공사명 추출 결과",
+                            "loc": "장소 추출 결과",
+                            "period": "기간 추출 결과",
+                            "content": "작업 내용 요약"
+                        },
+                        "risk_data": [
+                            {
+                                "equipment": "작업단위 또는 사용장비 (예: 용접작업)",
+                                "risk_factor": "구체적 위험요인 (예: 불티 비산에 의한 화재)",
+                                "risk_level": "상/중/하",
+                                "countermeasure": "구체적 안전 대책 (KCS 인증 보호구 착용 등)",
+                                "manager": "안전담당자"
+                            }
+                        ]
+                    }
+                    """
+
+                    response = pdf_risk_model.generate_content([prompt, uploaded_pdf])
+                    
+                    # 3. 데이터 파싱
+                    raw_text = response.text
+                    # JSON 블록 찾기 ({ ... })
+                    json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                    
+                    if json_match:
+                        full_data = json.loads(json_match.group(0))
+                        
+                        # 데이터 분리
+                        extracted_info = full_data.get("project_info", {})
+                        extracted_risks = full_data.get("risk_data", [])
+
+                        # 4. 분석 결과 미리보기 (사용자 확인용)
+                        st.success("✅ 분석 완료! 추출된 정보를 확인하세요.")
+                        
+                        with st.expander("📄 추출된 공사 개요 확인", expanded=True):
+                            c1, c2 = st.columns(2)
+                            c1.text_input("공사명", value=extracted_info.get("name", ""), disabled=True)
+                            c1.text_input("장소", value=extracted_info.get("loc", ""), disabled=True)
+                            c2.text_input("기간", value=extracted_info.get("period", ""), disabled=True)
+                            c2.text_area("작업 내용", value=extracted_info.get("content", ""), disabled=True)
+
+                        # 5. 엑셀 생성
+                        excel_byte = generate_excel_from_scratch(extracted_info, extracted_risks)
+
+                        st.markdown("---")
+                        st.download_button(
+                            label="📥 위험성평가 엑셀 다운로드 (.xlsx)",
+                            data=excel_byte,
+                            file_name=f"위험성평가_{extracted_info.get('name', '자동생성')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            type="primary"
+                        )
+                        
+                    else:
+                        st.error("AI 응답에서 유효한 JSON 데이터를 찾지 못했습니다.")
+                        st.text(raw_text)
+
+                    # 파일 정리
+                    genai.delete_file(uploaded_pdf.name)
+                    if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
+                except Exception as e:
+                    st.error(f"분석 중 오류 발생: {e}")
+                    if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
 
 
