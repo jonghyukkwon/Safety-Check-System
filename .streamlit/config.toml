@@ -1,0 +1,11 @@
+[theme]
+primaryColor = "#FF4B4B"
+backgroundColor = "#000000"         # 배경: 완전 블랙
+secondaryBackgroundColor = "#1E1E1E" # 컨테이너/사이드바: 짙은 회색
+textColor = "#FFFFFF"               # 글자: 화이트
+font = "sans serif"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
