@@ -16,12 +16,12 @@ st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
 LOGO_URL = "https://raw.githubusercontent.com/jonghyukkwon/Safety-Check-System/main/logo.png"
 
 # 샴페인 골드 테마 & 다크 모드 호환 CSS
-st.markdown("""
+st.markdown(f"""
     <style>
         /* 상단 헤더 배경색 (샴페인 골드) */
         header[data-testid="stHeader"] {{
             background-color: #9F896C !important;
-            height: 3.5rem;
+            
         }}
 
         /* 헤더 내부에 로고 강제 삽입 */
@@ -403,6 +403,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
