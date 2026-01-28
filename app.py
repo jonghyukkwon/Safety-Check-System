@@ -41,10 +41,10 @@ st.markdown(f"""
         }}
 
         /* 헤더 아이콘 색상 (화이트) */
-        header[data-testid="stHeader"] svg {{
+      header[data-testid="stHeader"] * {{
             color: white !important;
-            stroke: white !important;
             fill: white !important;
+            stroke: white !important;
         }}
 
         /* 탭 선택 시 강조 색상 */
@@ -405,6 +405,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
