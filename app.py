@@ -23,7 +23,7 @@ st.markdown("""
         }
 
         /* 헤더 내부에 로고 강제 삽입 */
-        header[data-testid="stHeader"]::before {{
+        header[data-testid="stHeader"]::before {
             content: "";
             position: absolute;
             left: 20px; /* 좌측 여백 */
@@ -36,7 +36,7 @@ st.markdown("""
             background-repeat: no-repeat;
             background-position: left center;
             z-index: 1;
-        }}
+        }
         
         /* 헤더 아이콘 색상 (화이트) */
         header[data-testid="stHeader"] svg {
@@ -401,6 +401,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
