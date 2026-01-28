@@ -13,7 +13,7 @@ from guide_data import MASTER_GUIDE_TEXT
 # 0. 페이지 설정 및 디자인 (샴페인 골드)
 # ==========================================
 st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
-LOGO_URL = "https://github.com/jonghyukkwon/Safety-Check-System/blob/main/logo.png?raw=true"
+LOGO_URL = "https://github.com/jonghyukkwon/Safety-Check-System/blob/main/logo.png"
 
 # 샴페인 골드 테마 & 다크 모드 호환 CSS
 st.markdown("""
@@ -402,6 +402,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
