@@ -4,11 +4,13 @@ import json
 import io
 import re
 import os
+import time
+import pandas as pd # 엑셀 분석용 Pandas 추가
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from guide_data import MASTER_GUIDE_TEXT
-
+from guide_data2 import MASTER_GUIDE_TEXT2
 # ==========================================
 # 0. 페이지 설정 및 디자인 (샴페인 골드)
 # ==========================================
@@ -308,35 +310,33 @@ with main_tab1:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_path): os.remove(temp_path)
 
-    # [Sub Tab 1-2] 위험성평가 적정성 평가 (신규 기능)
+    # [Sub Tab 1-2] 위험성평가 적정성 평가 (Pandas 적용 완료)
     with sub_tab1_2:
         st.subheader("1-2. 위험성평가 적정성 검토")
         st.info("제출된 위험성평가서(PDF, Excel)가 가이드라인에 부합하는지 분석합니다.")
 
         risk_eval_file = st.file_uploader("위험성평가서 업로드 (PDF/Excel)", type=["pdf", "xlsx", "xls"], key="eval_upload_1_2")
 
-        if st.button("위험성평가 검토 시작", key="eval_btn_1_2"):
+        if st.button("위험성평가 검토 시작", key="btn_eval_1_2"):
             if not risk_eval_file:
                 st.warning("파일을 업로드해 주세요.")
             else:
                 with st.spinner("위험성평가 내용을 정밀 분석 중..."):
                     try:
-                        # 파일 타입 확인
                         file_ext = risk_eval_file.name.split('.')[-1].lower()
                         model_input = []
                         
-                        # 1. Excel 처리 (텍스트 추출)
+                        # 1. Excel 처리 (Pandas 사용 - 속도 및 인식률 향상)
                         if file_ext in ['xlsx', 'xls']:
-                            from openpyxl import load_workbook
-                            wb = load_workbook(risk_eval_file, data_only=True)
-                            excel_text = "### [위험성평가서 엑셀 데이터] ###\n"
-                            for sheet in wb.sheetnames:
-                                ws = wb[sheet]
-                                excel_text += f"\n--- Sheet: {sheet} ---\n"
-                                for row in ws.iter_rows(values_only=True):
-                                    row_str = " | ".join([str(c) for c in row if c is not None])
-                                    if row_str.strip():
-                                        excel_text += row_str + "\n"
+                            # 모든 시트 로드
+                            df_dict = pd.read_excel(risk_eval_file, sheet_name=None)
+                            excel_text = "### [위험성평가서 엑셀 데이터 분석] ###\n"
+                            
+                            for sheet_name, df in df_dict.items():
+                                excel_text += f"\n--- Sheet: {sheet_name} ---\n"
+                                # 마크다운 형식으로 변환하여 AI에게 표 구조 전달 (NaN 값은 공란 처리)
+                                excel_text += df.fillna("").to_markdown(index=False)
+                            
                             model_input.append(excel_text)
                         
                         # 2. PDF 처리 (Gemini 업로드)
@@ -347,7 +347,7 @@ with main_tab1:
                             while uploaded_risk_file.state.name == "PROCESSING": time.sleep(1); uploaded_risk_file = genai.get_file(uploaded_risk_file.name)
                             model_input.append(uploaded_risk_file)
 
-                        # 평가 모델 호출 (Flash 모델 사용)
+                        # 평가 모델 호출
                         risk_eval_model = genai.GenerativeModel(
                             model_name="models/gemini-2.5-flash",
                             generation_config={
@@ -356,7 +356,7 @@ with main_tab1:
                             }
                         )
 
-                        # 위험성평가 전용 프롬프트
+                        # 프롬프트
                         prompt_risk = f"""
                         당신은 '위험성평가 적정성 검토 전문가'입니다.
                         제출된 문서를 아래 [위험성평가 가이드라인]에 따라 평가하고 결과를 JSON으로 출력하세요.
@@ -380,9 +380,7 @@ with main_tab1:
                         ]
                         """
                         
-                        # 프롬프트 추가 (리스트 맨 앞에)
                         model_input.insert(0, prompt_risk)
-
                         response = risk_eval_model.generate_content(model_input)
                         result_data = json.loads(response.text)
                         
@@ -402,7 +400,6 @@ with main_tab1:
                                         st.caption(item['comment'])
                                     with c2:
                                         st.metric("점수", f"{item['score']} / {item['max_score']}")
-
                         else:
                             st.error("분석 결과 형식이 올바르지 않습니다.")
 
@@ -413,10 +410,9 @@ with main_tab1:
 
                     except Exception as e:
                         st.error(f"분석 중 오류 발생: {e}")
-                        # 파일 정리 (에러 시)
                         if 'file_ext' in locals() and file_ext == 'pdf' and os.path.exists(temp_risk_path):
                             os.remove(temp_risk_path)
-
+                            
 # ------------------------------------------------------------------------------
 # [Main Tab 2] 위험성평가 관리 (기존 코드 유지)
 # ------------------------------------------------------------------------------
@@ -509,3 +505,4 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
