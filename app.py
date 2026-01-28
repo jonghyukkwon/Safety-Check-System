@@ -31,22 +31,13 @@ st.markdown(f"""
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            width: 215px;
-            height: 40px;
+            width: 258px;
+            height: 48px;
             background-image: url("{LOGO_URL}");
             background-size: contain;
             background-repeat: no-repeat;
             background-position: left center;
             z-index: 1;
-        }}
-
-        /* 헤더 우측요소 화이트 강제 적용 */
-       
-        header[data-testid="stHeader"] svg {{
-            color: white !important;
-            fill: white !important;
-            stroke: white !important;
-            border-color: white !important;
         }}
 
         /* 검은색 이미지 아이콘을 강제로 흰색으로 반전 (핵심) */
@@ -424,6 +415,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
