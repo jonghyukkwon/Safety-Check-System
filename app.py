@@ -42,6 +42,8 @@ st.markdown(f"""
 
         /* 헤더 아이콘 색상 (화이트) */
         header[data-testid="stHeader"] svg {{
+            color: white !important;
+            stroke: white !important;
             fill: white !important;
         }}
 
@@ -403,6 +405,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
