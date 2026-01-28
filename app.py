@@ -31,8 +31,8 @@ st.markdown(f"""
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            width: 120px;
-            height: 35px;
+            width: 215px;
+            height: 40px;
             background-image: url("{LOGO_URL}");
             background-size: contain;
             background-repeat: no-repeat;
@@ -403,6 +403,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
