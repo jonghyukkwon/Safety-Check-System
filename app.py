@@ -13,25 +13,26 @@ from guide_data import MASTER_GUIDE_TEXT
 # 0. 페이지 설정 및 디자인 (샴페인 골드)
 # ==========================================
 st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
-LOGO_URL = "https://github.com/jonghyukkwon/Safety-Check-System/blob/main/logo.png"
+LOGO_URL = "https://raw.githubusercontent.com/jonghyukkwon/Safety-Check-System/main/logo.png"
 
 # 샴페인 골드 테마 & 다크 모드 호환 CSS
 st.markdown("""
     <style>
         /* 상단 헤더 배경색 (샴페인 골드) */
-        header[data-testid="stHeader"] {
+        header[data-testid="stHeader"] {{
             background-color: #9F896C !important;
-        }
+            height: 3.5rem;
+        }}
 
         /* 헤더 내부에 로고 강제 삽입 */
         header[data-testid="stHeader"]::before {{
             content: "";
             position: absolute;
-            left: 20px; /* 좌측 여백 */
-            top: 50%; /* 중앙 정렬 */
+            left: 20px;
+            top: 50%;
             transform: translateY(-50%);
-            width: 120px; /* 로고 가로 크기 */
-            height: 35px; /* 로고 세로 크기 */
+            width: 120px;
+            height: 35px;
             background-image: url("{LOGO_URL}");
             background-size: contain;
             background-repeat: no-repeat;
@@ -40,25 +41,25 @@ st.markdown("""
         }}
 
         /* 헤더 아이콘 색상 (화이트) */
-        header[data-testid="stHeader"] svg {
+        header[data-testid="stHeader"] svg {{
             fill: white !important;
-        }
+        }}
 
         /* 탭 선택 시 강조 색상 */
-        .stTabs [data-baseweb="tab-highlight-indicator"] {
+        .stTabs [data-baseweb="tab-highlight-indicator"] {{
             background-color: #9F896C !important;
-        }
+        }}
         
         /* 버튼 스타일 */
-        div.stButton > button:first-child {
+        div.stButton > button:first-child {{
             background-color: #9F896C;
             color: white;
             border: none;
-        }
-        div.stButton > button:hover {
+        }}
+        div.stButton > button:hover {{
             background-color: #8A7558;
             color: white;
-        }
+        }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -402,6 +403,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
