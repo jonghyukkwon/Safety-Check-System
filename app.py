@@ -31,8 +31,8 @@ st.markdown(f"""
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            width: 258px;
-            height: 48px;
+            width: 215px;
+            height: 40px;
             background-image: url("{LOGO_URL}");
             background-size: contain;
             background-repeat: no-repeat;
@@ -40,16 +40,22 @@ st.markdown(f"""
             z-index: 1;
         }}
 
-        /* 검은색 이미지 아이콘을 강제로 흰색으로 반전 (핵심) */
-        header[data-testid="stHeader"] img,
-        header[data-testid="stHeader"] svg {{
+       /* 1. 헤더 우측 버튼/링크 내의 모든 그래픽 요소를 흰색으로 강제 반전 */
+        header[data-testid="stHeader"] button img,
+        header[data-testid="stHeader"] button svg,
+        header[data-testid="stHeader"] a img,
+        header[data-testid="stHeader"] a svg,
+        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] svg {{
             filter: brightness(0) invert(1) !important;
+            fill: white !important;
+            color: white !important;
         }}
 
-        /* 2. GitHub 아이콘 등 이미지가 포함된 버튼의 투명도 해제 */
-        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] {{
-            background-color: transparent !important;
-            border: 1px solid white !important;
+        /* 2. 텍스트 요소(Share 등)도 화이트 고정 */
+        header[data-testid="stHeader"] button p,
+        header[data-testid="stHeader"] a p,
+        header[data-testid="stHeader"] span {{
+            color: white !important;
         }}
 
         /* 3. 아이콘에 마우스를 올렸을 때 배경색 (샴페인 골드와 어울리는 연한 흰색) */
@@ -415,6 +421,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
