@@ -209,227 +209,172 @@ def generate_excel_from_scratch(p_info, risk_data):
     return output
 
 # ==========================================
-# 3. 메인 UI 구조 (대분류 -> 소분류)
+# 3. 메인 UI 구조 (대분류 -> 소분류 구조 변경)
 # ==========================================
-# 대분류 탭 생성
-main_tab1, main_tab2 = st.tabs(["📑 적격수급업체 평가", "📊 위험성평가 관리"])
+# 대분류 탭 이름 변경
+main_tab1, main_tab2 = st.tabs(["📑 안전보건관계서류 검토", "📊 위험성평가 관리"])
 
 # ------------------------------------------------------------------------------
-# [Main Tab 1] 적격수급업체 평가
+# [Main Tab 1] 안전보건관계서류 검토 (Sub Tab 1-1, 1-2)
 # ------------------------------------------------------------------------------
 with main_tab1:
-    # 기존 Tab 1 기능 (안전보건관리계획서 정량 평가)
-    st.header("1. 수급업체 안전보건관리계획서 정량 평가")
-    st.info("AI가 가이드라인에 따라 점수를 산출합니다.")
+    # 서브 탭 생성
+    sub_tab1_1, sub_tab1_2 = st.tabs(["📝 1-1. 안전보건관리계획서 평가", "🔍 1-2. 위험성평가 적정성 평가"])
 
-    # 1. 모델 설정 (기존 Tab 1 코드 유지)
-    eval_model = genai.GenerativeModel(
-        model_name="models/gemini-2.5-flash",
-        generation_config={
-            "temperature": 0.0,
-            "response_mime_type": "application/json",
-        },
-        system_instruction="당신은 창의성이 없는 '안전보건 점수 계산기'입니다. 문서를 해석하려 하지 말고, 텍스트에 키워드가 있는지만 확인하십시오."
-    )
+    # [Sub Tab 1-1] 기존 안전보건관리계획서 정량 평가 (기존 코드 이동)
+    with sub_tab1_1:
+        st.subheader("1-1. 안전보건관리계획서 정량 평가")
+        st.info("AI가 '안전보건관리계획서 가이드라인'에 따라 점수를 산출합니다.")
 
-    user_file = st.file_uploader("업체 제출 계획서(PDF) 업로드", type=["pdf"], key="eval_upload_main")
+        # 모델 설정 (엄격 모드)
+        eval_model = genai.GenerativeModel(
+            model_name=MODEL_ID,
+            generation_config=generation_config, 
+            safety_settings=safety_settings,
+            system_instruction="당신은 감정이 없는 '안전보건 점수 계산기'입니다."
+        )
 
-    if st.button("평가 시작", key="eval_btn_main"):
-        if not user_file:
-            st.warning("파일을 업로드해 주세요.")
-        else:
-            with st.spinner("AI가 문서의 이미지와 내용을 정밀 분석 중..."):
-                temp_path = "temp_eval.pdf"
-                try:
-                    with open(temp_path, "wb") as f:
-                        f.write(user_file.getbuffer())
-                    
-                    uploaded_file = genai.upload_file(temp_path, mime_type="application/pdf")
-                    while uploaded_file.state.name == "PROCESSING":
-                        time.sleep(1)
-                        uploaded_file = genai.get_file(uploaded_file.name)
+        user_file = st.file_uploader("업체 제출 계획서(PDF) 업로드", type=["pdf"], key="eval_upload_1_1")
 
-                    # 기존 프롬프트 유지
-                    prompt = f"""
-                    [참조: 가이드라인]
-                    {MASTER_GUIDE_TEXT}
-
-                    [마스터 가이드라인]을 기준으로 수급업체 계획서를 채점하십시오.
-                    변덕스러운 점수를 막기 위해, 각 항목별로 **반드시 PDF 내의 '증거 문장'을 먼저 찾고** 점수를 매기십시오.
-
-                    [🚫 절대적 채점 규칙 (Tie-Breaker Rule)]
-                    1. **증거 우선주의**: "잘 할 것으로 보임", "계획된 것으로 추정됨" 같은 추측은 절대 금지. PDF에 명시된 문구가 없으면 0점.
-                    2. **하향 평가 원칙**: 
-                       - 5점 줄까 3점 줄까 고민되면 -> **3점** 부여.
-                       - 3점 줄까 1점 줄까 고민되면 -> **1점** 부여.
-                       - **즉, 확실한 근거가 없는 한 높은 점수를 주지 마시오.**
-                    3. **공종 일치성**: PDF 제목의 공사명과 본문의 작업 내용이 불일치(복사 붙여넣기 의심)하면 해당 항목 0점 처리.
-                    4. **중대재해(17번)**: '해당없음' 또는 '무재해'라는 명확한 텍스트나 증명서가 없으면, 확인 불가로 간주하여 0점 처리.
-
-                    [출력 형식]
-                    [
-                        {{
-                            "item_no": 1,
-                            "category": "항목명",
-                            "score": 0,
-                            "max_score": 5,
-                            "evidence": "증거 내용",
-                            "judgment": "등급"
-                        }}
-                    ]
-                    """
-                    
-                    response = eval_model.generate_content([prompt, uploaded_file])
-                    eval_data = json.loads(response.text)
-                    
-                    if isinstance(eval_data, list):
-                        total_score = sum(item['score'] for item in eval_data)
-                        st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
-                        
-                        if total_score >= 90: st.success("✅ **[고위험군 / 일반군 모두 적격]**")
-                        elif 80 <= total_score < 90: st.warning("⚠️ **[일반군 적격 / 고위험군 부적격]**")
-                        elif 70 <= total_score < 80: st.error("❌ **[부적격]** (80점 미달)")
-                        else: st.error("🚫 **[절대 선정 불가]** (70점 미만)")
-                        
-                        st.markdown("---")
-                        display_data = [{"항목": f"{i['item_no']}. {i['category']}", "점수": f"{i['score']}/{i['max_score']}", "등급": i['judgment'], "근거": i['evidence']} for i in eval_data]
-                        st.table(display_data)
-                    else:
-                        st.error("데이터 형식 오류")
-                        st.json(eval_data)
-
-                    genai.delete_file(uploaded_file.name)
-                    if os.path.exists(temp_path): os.remove(temp_path)
-
-                except Exception as e:
-                    st.error(f"오류: {e}")
-                    if os.path.exists(temp_path): os.remove(temp_path)
-
-# ------------------------------------------------------------------------------
-# [Main Tab 2] 위험성평가 관리 (소분류 Tab 2.1, 2.2)
-# ------------------------------------------------------------------------------
-with main_tab2:
-    # 소분류 탭 생성
-    sub_tab1, sub_tab2 = st.tabs(["📝 2-1. 직접 입력형 생성", "📑 2-2. PDF 기반 생성"])
-
-    # [Sub Tab 2.1] 직접 입력형 (기존 Tab 2)
-    with sub_tab1:
-        st.subheader("2-1. 공사 내용 직접 입력")
-        st.info("공사 내용을 입력하면 표준 위험성평가표 엑셀을 생성합니다.")
-
-        with st.container(border=True):
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                p_name = st.text_input("공사명", placeholder="예: 3층 객실 리모델링")
-                p_loc = st.text_input("장소", placeholder="예: 본관 3층")
-                p_period = st.text_input("기간", placeholder="예: 26.02.01 ~ 02.15")
-                p_content = st.text_area("작업 내용", height=100)
-            with col2:
-                risk_cols = st.columns(3)
-                r_check = [
-                    risk_cols[0].checkbox("🔥 화기"), risk_cols[0].checkbox("⚡ 전기"),
-                    risk_cols[1].checkbox("🪜 고소"), risk_cols[1].checkbox("🏗️ 중량물"),
-                    risk_cols[2].checkbox("☠️ 위험물"), risk_cols[2].checkbox("🕳️ 밀폐")
-                ]
-                selected_risks = [["화기","전기","고소","중량물","위험물","밀폐"][i] for i, v in enumerate(r_check) if v]
-                st.markdown("---")
-                gen_btn_manual = st.button("✨ 엑셀 생성 (입력형)", type="primary", use_container_width=True)
-
-        if gen_btn_manual:
-            if not p_name: st.warning("공사명을 입력하세요.")
+        if st.button("계획서 평가 시작", key="btn_eval_1_1"):
+            if not user_file:
+                st.warning("파일을 업로드해 주세요.")
             else:
-                with st.spinner("AI 생성 중..."):
+                with st.spinner("AI가 계획서를 분석 중입니다..."):
+                    temp_path = "temp_eval_plan.pdf"
                     try:
-                        risk_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
+                        with open(temp_path, "wb") as f: f.write(user_file.getbuffer())
+                        uploaded_file = genai.upload_file(temp_path, mime_type="application/pdf")
+                        while uploaded_file.state.name == "PROCESSING": time.sleep(1); uploaded_file = genai.get_file(uploaded_file.name)
+
                         prompt = f"""
-                        [공사정보] {p_name} / {p_content} / 위험요인: {", ".join(selected_risks)}
-                        위험요인별 5~7개 항목 도출하여 JSON 출력:
-                        [ {{ "equipment": "...", "risk_factor": "...", "risk_level": "...", "countermeasure": "...", "manager": "..." }} ]
+                        [참조: 가이드라인] {MASTER_GUIDE_TEXT}
+                        [지침] 위 가이드라인을 기준으로 계획서를 채점하세요. 증거가 없으면 0점 처리하십시오.
+                        [출력 형식] JSON 리스트: [ {{ "item_no": 1, "category": "항목명", "score": 0, "max_score": 5, "evidence": "...", "judgment": "..." }} ]
                         """
-                        response = risk_model.generate_content(prompt)
-                        clean_text = re.sub(r"```json|```", "", response.text).strip()
-                        risk_data = json.loads(clean_text)
                         
-                        excel_byte = generate_excel_from_scratch({"name":p_name, "loc":p_loc, "period":p_period, "content":p_content}, risk_data)
-                        st.success("완료!")
-                        st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_name}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        response = eval_model.generate_content([prompt, uploaded_file])
+                        eval_data = json.loads(response.text)
+                        
+                        if isinstance(eval_data, dict): eval_data = list(eval_data.values())[0]
+
+                        if isinstance(eval_data, list):
+                            total_score = sum(item['score'] for item in eval_data)
+                            st.markdown(f"## 🏆 종합 점수: **{total_score}점**")
+                            
+                            # 등급 표시 로직
+                            if total_score >= 90: st.success("✅ **[적격]**")
+                            elif 70 <= total_score < 90: st.warning("⚠️ **[보완 필요]**")
+                            else: st.error("❌ **[부적격]**")
+                            
+                            st.table([{"항목": f"{i['item_no']}. {i['category']}", "점수": f"{i['score']}", "근거": i['evidence']} for i in eval_data])
+                        else:
+                            st.error("데이터 형식 오류")
+
+                        genai.delete_file(uploaded_file.name)
+                        if os.path.exists(temp_path): os.remove(temp_path)
                     except Exception as e: st.error(f"오류: {e}")
 
-    # [Sub Tab 2.2] PDF 기반 생성 (기존 Tab 3)
-    with sub_tab2:
-        st.subheader("2-2. 안전보건관리계획서(PDF) 기반 자동 생성")
-        st.info("PDF 계획서를 분석하여 공사 개요와 위험요인을 스스로 추출합니다.")
+    # [Sub Tab 1-2] 위험성평가 적정성 평가 (신규 기능)
+    with sub_tab1_2:
+        st.subheader("1-2. 위험성평가 적정성 검토")
+        st.info("제출된 위험성평가서(PDF/Excel)가 '적정성 검토 가이드라인'에 부합하는지 분석합니다.")
 
-        pdf_file = st.file_uploader("계획서(PDF) 업로드", type=["pdf"], key="risk_pdf_upload")
-        
-        if st.button("🚀 분석 및 엑셀 생성", key="pdf_risk_btn", type="primary"):
-            if not pdf_file: st.warning("PDF를 업로드하세요.")
+        risk_file = st.file_uploader("위험성평가서 업로드 (PDF/Excel)", type=["pdf", "xlsx", "xls"], key="eval_upload_1_2")
+
+        if st.button("위험성평가 검토 시작", key="btn_eval_1_2"):
+            if not risk_file:
+                st.warning("파일을 업로드해 주세요.")
             else:
-                with st.spinner("PDF 분석 중..."):
-                    temp_pdf = "temp_plan.pdf"
+                with st.spinner("위험성평가 내용을 분석 중입니다..."):
                     try:
-                        with open(temp_pdf, "wb") as f: f.write(pdf_file.getbuffer())
-                        up_pdf = genai.upload_file(temp_pdf, mime_type="application/pdf")
-                        while up_pdf.state.name == "PROCESSING": time.sleep(1); up_pdf = genai.get_file(up_pdf.name)
+                        # 파일 처리 로직
+                        file_ext = risk_file.name.split('.')[-1].lower()
+                        content_parts = []
 
-                        pdf_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
-                        prompt = """
-                        PDF를 분석하여 다음 두 가지를 JSON으로 추출하세요.
-                        1. project_info: 공사명, 장소, 기간, 내용
-                        2. risk_data: 작업 내용 기반 위험요인 7개 이상 (equipment, risk_factor, risk_level, countermeasure, manager)
-                        출력 형식: { "project_info": {...}, "risk_data": [...] }
+                        # 1. 엑셀 파일일 경우: 텍스트로 변환하여 프롬프트에 삽입
+                        if file_ext in ['xlsx', 'xls']:
+                            import pandas as pd
+                            df_dict = pd.read_excel(risk_file, sheet_name=None)
+                            text_content = ""
+                            for sheet, df in df_dict.items():
+                                text_content += f"Sheet: {sheet}\n{df.to_string()}\n"
+                            content_parts.append(text_content)
+                        
+                        # 2. PDF 파일일 경우: Gemini에 직접 업로드
+                        elif file_ext == 'pdf':
+                            temp_path = "temp_eval_risk.pdf"
+                            with open(temp_path, "wb") as f: f.write(risk_file.getbuffer())
+                            uploaded_file = genai.upload_file(temp_path, mime_type="application/pdf")
+                            while uploaded_file.state.name == "PROCESSING": time.sleep(1); uploaded_file = genai.get_file(uploaded_file.name)
+                            content_parts.append(uploaded_file)
+
+                        # 평가 모델 호출
+                        risk_eval_model = genai.GenerativeModel(
+                            model_name=MODEL_ID,
+                            generation_config=generation_config,
+                            safety_settings=safety_settings
+                        )
+
+                        prompt = f"""
+                        당신은 '위험성평가 검토 전문가'입니다.
+                        제출된 문서를 아래 [위험성평가 가이드라인]에 따라 평가하십시오.
+
+                        [위험성평가 가이드라인 (MASTER_GUIDE_TEXT2)]
+                        {MASTER_GUIDE_TEXT2}
+
+                        [평가 기준]
+                        - 각 항목별로 구체적인 근거(문서 내 내용)를 찾아 평가할 것.
+                        - 두루뭉술하거나 복사 붙여넣기 한 내용은 감점할 것.
+
+                        [출력 형식]
+                        반드시 아래 JSON 리스트 형태로 출력하세요.
+                        [
+                            {{
+                                "category": "평가 항목명 (예: 위험요인 도출)",
+                                "score": 25,
+                                "max_score": 30,
+                                "status": "양호/미흡",
+                                "comment": "평가 의견 및 보완 필요 사항"
+                            }}
+                        ]
                         """
-                        response = pdf_model.generate_content([prompt, up_pdf])
                         
-                        raw_text = response.text
-                        json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                        content_parts.insert(0, prompt)
+                        response = risk_eval_model.generate_content(content_parts)
+                        result_data = json.loads(response.text)
                         
-                        if json_match:
-                            full_data = json.loads(json_match.group(0))
-                            p_info = full_data.get("project_info", {})
-                            r_data = full_data.get("risk_data", [])
+                        if isinstance(result_data, dict): result_data = list(result_data.values())[0]
 
-                            st.success("분석 완료!")
-                            with st.expander("추출된 개요 확인", expanded=True):
-                                st.text(f"공사명: {p_info.get('name')}\n내용: {p_info.get('content')}")
-
-                            excel_byte = generate_excel_from_scratch(p_info, r_data)
-                            st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_info.get('name','자동')}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        # 결과 출력
+                        st.markdown("### 📋 검토 결과 보고서")
+                        if isinstance(result_data, list):
+                            total_risk_score = sum(item['score'] for item in result_data)
+                            st.markdown(f"#### 💯 종합 점수: **{total_risk_score}점**")
+                            st.progress(total_risk_score / 100)
+                            
+                            st.markdown("---")
+                            
+                            # 카드 형태로 결과 보여주기
+                            for item in result_data:
+                                with st.container(border=True):
+                                    c1, c2 = st.columns([8, 2])
+                                    with c1:
+                                        st.markdown(f"**📌 {item['category']}**")
+                                        st.caption(f"의견: {item['comment']}")
+                                    with c2:
+                                        st.markdown(f"**{item['score']} / {item['max_score']}**")
+                                        if item['status'] == "양호":
+                                            st.success(item['status'])
+                                        else:
+                                            st.error(item['status'])
                         else:
-                            st.error("JSON 파싱 실패")
+                            st.error("분석 결과 형식이 올바르지 않습니다.")
 
-                        genai.delete_file(up_pdf.name)
-                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
+                        # 뒷정리 (PDF인 경우만)
+                        if file_ext == 'pdf':
+                            genai.delete_file(uploaded_file.name)
+                            if os.path.exists(temp_path): os.remove(temp_path)
+
                     except Exception as e:
-                        st.error(f"오류: {e}")
-                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                        st.error(f"분석 중 오류 발생: {e}")
