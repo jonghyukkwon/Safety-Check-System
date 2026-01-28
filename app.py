@@ -10,6 +10,46 @@ from openpyxl.utils import get_column_letter
 from guide_data import MASTER_GUIDE_TEXT
 
 # ==========================================
+# 0. 페이지 설정 및 디자인 (샴페인 골드)
+# ==========================================
+st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
+
+# 샴페인 골드 테마 & 다크 모드 호환 CSS
+st.markdown("""
+    <style>
+        /* 상단 헤더 배경색 (샴페인 골드) */
+        header[data-testid="stHeader"] {
+            background-color: #9F896C !important;
+        }
+        
+        /* 헤더 아이콘 색상 (화이트) */
+        header[data-testid="stHeader"] svg {
+            fill: white !important;
+        }
+
+        /* 탭 선택 시 강조 색상 */
+        .stTabs [data-baseweb="tab-highlight-indicator"] {
+            background-color: #9F896C !important;
+        }
+        
+        /* 버튼 스타일 */
+        div.stButton > button:first-child {
+            background-color: #9F896C;
+            color: white;
+            border: none;
+        }
+        div.stButton > button:hover {
+            background-color: #8A7558;
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🏨 호텔 안전보건 통합 관리 시스템")
+
+
+
+# ==========================================
 # 1. API 설정 및 모델 선언
 # ==========================================
 try:
@@ -345,5 +385,6 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
