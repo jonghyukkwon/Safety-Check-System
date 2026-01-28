@@ -154,6 +154,34 @@ def generate_excel_from_scratch(p_info, risk_data):
 # 3. 메인 UI 구성
 # ==========================================
 st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
+
+# 상단 툴바 및 배경 스타일 커스텀
+st.markdown("""
+    <style>
+        /* 상단 헤더 영역 배경색 설정 */
+        header[data-testid="stHeader"] {
+            background-color: #9F896C !important;
+        }
+        
+        /* 헤더 내 아이콘 색상을 화이트로 변경 (골드 배경 대비) */
+        header[data-testid="stHeader"] svg {
+            fill: white !important;
+        }
+
+        /* 탭 바의 강조 라인 색상 */
+        .stTabs [data-baseweb="tab-highlight-indicator"] {
+            background-color: #9F896C !important;
+        }
+        
+        /* 버튼 배경색 커스텀 */
+        div.stButton > button:first-child {
+            background-color: #9F896C;
+            color: white;
+            border: none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("🏨 호텔 안전보건 통합 관리 시스템")
 
 tab1, tab2, tab3 = st.tabs(["📑 적격수급업체 평가", "📊 위험성평가 자동 생성", "📑 안전보건관리계획서 기반 위험성평가 생성"])
@@ -497,6 +525,7 @@ with tab3:
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
                     if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
+
 
 
 
