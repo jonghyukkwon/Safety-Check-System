@@ -40,12 +40,28 @@ st.markdown(f"""
             z-index: 1;
         }}
 
-        /* 헤더 아이콘 색상 (화이트) */
-      header[data-testid="stHeader"] * {{
-            
+        /* 1. 헤더 우측 모든 요소(버튼, 링크, 텍스트) 화이트 강제 적용 */
+        header[data-testid="stHeader"] button, 
+        header[data-testid="stHeader"] a, 
+        header[data-testid="stHeader"] span,
+        header[data-testid="stHeader"] svg,
+        header[data-testid="stHeader"] path {
+            color: white !important;
             fill: white !important;
-            
-        }}
+            stroke: white !important;
+            border-color: white !important; /* 배포 버튼 테두리 대응 */
+        }
+
+        /* 2. GitHub 아이콘 등 이미지가 포함된 버튼의 투명도 해제 */
+        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] {
+            background-color: transparent !important;
+            border: 1px solid white !important;
+        }
+
+        /* 3. 아이콘에 마우스를 올렸을 때 배경색 (샴페인 골드와 어울리는 연한 흰색) */
+        header[data-testid="stHeader"] button:hover {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
 
         /* 탭 선택 시 강조 색상 */
         .stTabs [data-baseweb="tab-highlight-indicator"] {{
@@ -405,6 +421,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
