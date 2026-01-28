@@ -1,8 +1,8 @@
 [theme]
-primaryColor = "#FF4B4B"
-backgroundColor = "#000000"         # 배경: 완전 블랙
-secondaryBackgroundColor = "#1E1E1E" # 컨테이너/사이드바: 짙은 회색
-textColor = "#FFFFFF"               # 글자: 화이트
+primaryColor = "#9F896C"             # 샴페인 골드 (상단 바 라인 및 버튼 포인트)
+backgroundColor = "#FFFFFF"         # 배경: 화이트
+secondaryBackgroundColor = "#F0F2F6" # 사이드바/컨테이너: 연한 회색 (글자 가독성 위해 조정)
+textColor = "#31333F"               # 글자: 짙은 회색 (완전 블랙보다 가독성 좋음)
 font = "sans serif"
 
 [server]
