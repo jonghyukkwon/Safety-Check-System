@@ -412,4 +412,100 @@ with main_tab1:
                             if os.path.exists(temp_risk_path): os.remove(temp_risk_path)
 
                     except Exception as e:
-                        st.
+                        st.error(f"분석 중 오류 발생: {e}")
+                        # 파일 정리 (에러 시)
+                        if 'file_ext' in locals() and file_ext == 'pdf' and os.path.exists(temp_risk_path):
+                            os.remove(temp_risk_path)
+
+# ------------------------------------------------------------------------------
+# [Main Tab 2] 위험성평가 관리 (기존 코드 유지)
+# ------------------------------------------------------------------------------
+with main_tab2:
+    # 소분류 탭 생성
+    sub_tab1, sub_tab2 = st.tabs(["📝 2-1. 직접 입력형 생성", "📑 2-2. PDF 기반 생성"])
+
+    # [Sub Tab 2.1] 직접 입력형
+    with sub_tab1:
+        st.subheader("2-1. 공사 내용 직접 입력")
+        st.info("공사 내용을 입력하면 표준 위험성평가표 엑셀을 생성합니다.")
+
+        with st.container(border=True):
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                p_name = st.text_input("공사명", placeholder="예: 3층 객실 리모델링")
+                p_loc = st.text_input("장소", placeholder="예: 본관 3층")
+                p_period = st.text_input("기간", placeholder="예: 26.02.01 ~ 02.15")
+                p_content = st.text_area("작업 내용", height=100)
+            with col2:
+                risk_cols = st.columns(3)
+                r_check = [
+                    risk_cols[0].checkbox("🔥 화기"), risk_cols[0].checkbox("⚡ 전기"),
+                    risk_cols[1].checkbox("🪜 고소"), risk_cols[1].checkbox("🏗️ 중량물"),
+                    risk_cols[2].checkbox("☠️ 위험물"), risk_cols[2].checkbox("🕳️ 밀폐")
+                ]
+                selected_risks = [["화기","전기","고소","중량물","위험물","밀폐"][i] for i, v in enumerate(r_check) if v]
+                st.markdown("---")
+                gen_btn_manual = st.button("✨ 엑셀 생성 (입력형)", type="primary", use_container_width=True)
+
+        if gen_btn_manual:
+            if not p_name: st.warning("공사명을 입력하세요.")
+            else:
+                with st.spinner("AI 생성 중..."):
+                    try:
+                        risk_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config, safety_settings=safety_settings)
+                        prompt = f"""
+                        [공사정보] {p_name} / {p_content} / 위험요인: {", ".join(selected_risks)}
+                        위험요인별 5~7개 항목 도출하여 JSON 출력:
+                        [ {{ "equipment": "...", "risk_factor": "...", "risk_level": "...", "countermeasure": "...", "manager": "..." }} ]
+                        """
+                        response = risk_model.generate_content(prompt)
+                        risk_data = json.loads(response.text)
+                        if isinstance(risk_data, dict): risk_data = list(risk_data.values())[0]
+
+                        excel_byte = generate_excel_from_scratch({"name":p_name, "loc":p_loc, "period":p_period, "content":p_content}, risk_data)
+                        st.success("완료!")
+                        st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_name}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    except Exception as e: st.error(f"오류: {e}")
+
+    # [Sub Tab 2.2] PDF 기반 생성
+    with sub_tab2:
+        st.subheader("2-2. 안전보건관리계획서(PDF) 기반 자동 생성")
+        st.info("PDF 계획서를 분석하여 공사 개요와 위험요인을 스스로 추출합니다.")
+
+        pdf_file = st.file_uploader("계획서(PDF) 업로드", type=["pdf"], key="risk_pdf_upload")
+        
+        if st.button("🚀 분석 및 엑셀 생성", key="pdf_risk_btn", type="primary"):
+            if not pdf_file: st.warning("PDF를 업로드하세요.")
+            else:
+                with st.spinner("PDF 분석 중..."):
+                    temp_pdf = "temp_plan.pdf"
+                    try:
+                        with open(temp_pdf, "wb") as f: f.write(pdf_file.getbuffer())
+                        up_pdf = genai.upload_file(temp_pdf, mime_type="application/pdf")
+                        while up_pdf.state.name == "PROCESSING": time.sleep(1); up_pdf = genai.get_file(up_pdf.name)
+
+                        pdf_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config, safety_settings=safety_settings)
+                        prompt = """
+                        PDF를 분석하여 다음 두 가지를 JSON으로 추출하세요.
+                        1. project_info: 공사명, 장소, 기간, 내용
+                        2. risk_data: 작업 내용 기반 위험요인 7개 이상 (equipment, risk_factor, risk_level, countermeasure, manager)
+                        출력 형식: { "project_info": {...}, "risk_data": [...] }
+                        """
+                        response = pdf_model.generate_content([prompt, up_pdf])
+                        full_data = json.loads(response.text)
+                        
+                        p_info = full_data.get("project_info", {})
+                        r_data = full_data.get("risk_data", [])
+
+                        st.success("분석 완료!")
+                        with st.expander("추출된 개요 확인", expanded=True):
+                            st.text(f"공사명: {p_info.get('name')}\n내용: {p_info.get('content')}")
+
+                        excel_byte = generate_excel_from_scratch(p_info, r_data)
+                        st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_info.get('name','자동')}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+                        genai.delete_file(up_pdf.name)
+                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
+                    except Exception as e:
+                        st.error(f"오류: {e}")
+                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
