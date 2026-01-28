@@ -53,15 +53,15 @@ st.markdown(f"""
         }}
 
         /* 2. GitHub 아이콘 등 이미지가 포함된 버튼의 투명도 해제 */
-        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] {
+        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] {{
             background-color: transparent !important;
             border: 1px solid white !important;
-        }
+        }}
 
         /* 3. 아이콘에 마우스를 올렸을 때 배경색 (샴페인 골드와 어울리는 연한 흰색) */
-        header[data-testid="stHeader"] button:hover {
+        header[data-testid="stHeader"] button:hover {{
             background-color: rgba(255, 255, 255, 0.2) !important;
-        }
+        }}
 
         /* 탭 선택 시 강조 색상 */
         .stTabs [data-baseweb="tab-highlight-indicator"] {{
@@ -421,6 +421,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
