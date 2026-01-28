@@ -463,7 +463,7 @@ with main_tab2:
                         st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_name}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     except Exception as e: st.error(f"오류: {e}")
 
-    # [Sub Tab 2.2] PDF 기반 생성
+    # [Sub Tab 2.2] PDF 기반 생성 (에러 방지 강화 버전)
     with sub_tab2:
         st.subheader("2-2. 안전보건관리계획서(PDF) 기반 자동 생성")
         st.info("PDF 계획서를 분석하여 공사 개요와 위험요인을 스스로 추출합니다.")
@@ -471,44 +471,85 @@ with main_tab2:
         pdf_file = st.file_uploader("계획서(PDF) 업로드", type=["pdf"], key="risk_pdf_upload")
         
         if st.button("🚀 분석 및 엑셀 생성", key="pdf_risk_btn", type="primary"):
-            if not pdf_file: st.warning("PDF를 업로드하세요.")
+            if not pdf_file: 
+                st.warning("PDF를 업로드하세요.")
             else:
                 with st.spinner("PDF 분석 중..."):
                     temp_pdf = "temp_plan.pdf"
                     try:
-                        with open(temp_pdf, "wb") as f: f.write(pdf_file.getbuffer())
+                        with open(temp_pdf, "wb") as f: 
+                            f.write(pdf_file.getbuffer())
+                        
                         up_pdf = genai.upload_file(temp_pdf, mime_type="application/pdf")
-                        while up_pdf.state.name == "PROCESSING": time.sleep(1); up_pdf = genai.get_file(up_pdf.name)
+                        while up_pdf.state.name == "PROCESSING": 
+                            time.sleep(1)
+                            up_pdf = genai.get_file(up_pdf.name)
 
                         pdf_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
+                        
+                        # [프롬프트 가이드 수정] 키값을 엄격하게 지정
                         prompt = """
                         PDF를 분석하여 다음 두 가지를 JSON으로 추출하세요.
-                        1. project_info: 공사명, 장소, 기간, 내용
-                        2. risk_data: 작업 내용 기반 위험요인 7개 이상 (equipment, risk_factor, risk_level, countermeasure, manager)
-                        출력 형식: { "project_info": {...}, "risk_data": [...] }
+                        반드시 아래 '키(Key)' 이름을 정확하게 지켜야 합니다.
+                        1. project_info: name, loc, period, content
+                        2. risk_data: equipment, risk_factor, risk_level, countermeasure, manager
+                        출력 형식: { "project_info": {"name": "...", "loc": "...", "period": "...", "content": "..."}, "risk_data": [...] }
                         """
+                        
                         response = pdf_model.generate_content([prompt, up_pdf])
-
                         raw_text = response.text
+                        
+                        # JSON 추출 안전장치
                         json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
 
                         if json_match:
-                           full_data = json.loads(json_match.group(0))
-                           p_info = full_data.get("project_info", {})
-                           r_data = full_data.get("risk_data", [])
-                        
-                        st.success("분석 완료!")
-                        with st.expander("추출된 개요 확인", expanded=True):
-                            st.text(f"공사명: {p_info.get('name')}\n내용: {p_info.get('content')}")
+                            full_data = json.loads(json_match.group(0))
+                            
+                            # p_info를 가져오되, 데이터가 없으면 기본 딕셔너리 제공
+                            p_info = full_data.get("project_info", {})
+                            r_data = full_data.get("risk_data", [])
+                            
+                            # [핵심] 'name' 키가 없거나 분석 실패 시 기본값 강제 할당
+                            # .get() 메서드와 'or' 연산자로 빈 문자열 대응
+                            p_info_final = {
+                                "name": p_info.get("name") or "분석된 공사명 없음",
+                                "loc": p_info.get("loc") or "분석된 장소 없음",
+                                "period": p_info.get("period") or "분석된 기간 없음",
+                                "content": p_info.get("content") or "분석된 내용 없음"
+                            }
+                            
+                            st.success("분석 완료!")
+                            with st.expander("추출된 개요 확인", expanded=True):
+                                st.write(f"**공사명:** {p_info_final['name']}")
+                                st.write(f"**상세내용:** {p_info_final['content']}")
 
-                        excel_byte = generate_excel_from_scratch(p_info, r_data)
-                        st.download_button("📥 엑셀 다운로드", excel_byte, f"위험성평가_{p_info.get('name','자동')}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            # 엑셀 생성 함수에 안전한 데이터를 전달
+                            excel_byte = generate_excel_from_scratch(p_info_final, r_data)
+                            
+                            # 파일명에 에러가 나지 않도록 처리
+                            safe_filename = re.sub(r'[\\/*?:"<>|]', "", p_info_final['name'])
+                            st.download_button(
+                                label="📥 엑셀 다운로드", 
+                                data=excel_byte, 
+                                file_name=f"위험성평가_{safe_filename}.xlsx", 
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                        else:
+                            st.error("AI 응답에서 유효한 데이터 구조를 찾지 못했습니다. 다시 시도해 주세요.")
+                            with st.expander("AI 원문 보기"):
+                                st.code(raw_text)
 
-                        genai.delete_file(up_pdf.name)
-                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
                     except Exception as e:
-                        st.error(f"오류: {e}")
-                        if os.path.exists(temp_pdf): os.remove(temp_pdf)
+                        st.error(f"분석 중 오류 발생: {e}")
+                    finally:
+                        # 파일 정리 로직은 항상 실행되도록 finally에 배치
+                        try:
+                            genai.delete_file(up_pdf.name)
+                        except: pass
+                        if os.path.exists(temp_pdf): 
+                            os.remove(temp_pdf)
+
+        
 
 
 
