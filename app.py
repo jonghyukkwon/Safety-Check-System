@@ -448,7 +448,7 @@ with main_tab2:
             else:
                 with st.spinner("AI 생성 중..."):
                     try:
-                        risk_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config, safety_settings=safety_settings)
+                        risk_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
                         prompt = f"""
                         [공사정보] {p_name} / {p_content} / 위험요인: {", ".join(selected_risks)}
                         위험요인별 5~7개 항목 도출하여 JSON 출력:
@@ -480,7 +480,7 @@ with main_tab2:
                         up_pdf = genai.upload_file(temp_pdf, mime_type="application/pdf")
                         while up_pdf.state.name == "PROCESSING": time.sleep(1); up_pdf = genai.get_file(up_pdf.name)
 
-                        pdf_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config, safety_settings=safety_settings)
+                        pdf_model = genai.GenerativeModel(MODEL_ID, generation_config=creative_config)
                         prompt = """
                         PDF를 분석하여 다음 두 가지를 JSON으로 추출하세요.
                         1. project_info: 공사명, 장소, 기간, 내용
@@ -505,4 +505,5 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
