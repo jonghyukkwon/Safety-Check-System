@@ -455,8 +455,8 @@ with main_tab2:
                         [ {{ "equipment": "...", "risk_factor": "...", "risk_level": "...", "countermeasure": "...", "manager": "..." }} ]
                         """
                         response = risk_model.generate_content(prompt)
-                        risk_data = json.loads(response.text)
-                        if isinstance(risk_data, dict): risk_data = list(risk_data.values())[0]
+                        clean_text = re.sub(r"```json|```", "", response.text).strip()
+                        risk_data = json.loads(clean_text)
 
                         excel_byte = generate_excel_from_scratch({"name":p_name, "loc":p_loc, "period":p_period, "content":p_content}, risk_data)
                         st.success("완료!")
@@ -488,11 +488,15 @@ with main_tab2:
                         출력 형식: { "project_info": {...}, "risk_data": [...] }
                         """
                         response = pdf_model.generate_content([prompt, up_pdf])
-                        full_data = json.loads(response.text)
-                        
-                        p_info = full_data.get("project_info", {})
-                        r_data = full_data.get("risk_data", [])
 
+                        raw_text = response.text
+                        json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+
+                        if json_match:
+                           full_data = json.loads(json_match.group(0))
+                           p_info = full_data.get("project_info", {})
+                           r_data = full_data.get("risk_data", [])
+                        
                         st.success("분석 완료!")
                         with st.expander("추출된 개요 확인", expanded=True):
                             st.text(f"공사명: {p_info.get('name')}\n내용: {p_info.get('content')}")
@@ -505,5 +509,6 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
