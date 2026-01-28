@@ -31,7 +31,7 @@ st.markdown("""
             transform: translateY(-50%);
             width: 120px; /* 로고 가로 크기 */
             height: 35px; /* 로고 세로 크기 */
-            background-image: url("{https://portal.lottehotel.com/jsl/inline/ImageAction.Download/?type=1000&path=2021/06/23/kcube6326320093915129314.png}");
+            background-image: url("{https://github.com/jonghyukkwon/Safety-Check-System/blob/main/logo.png?raw=true}");
             background-size: contain;
             background-repeat: no-repeat;
             background-position: left center;
@@ -401,6 +401,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
