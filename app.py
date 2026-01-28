@@ -17,7 +17,7 @@ st.set_page_config(page_title="호텔 안전보건 시스템", layout="wide")
 # 로고 추가 부분
 LOGO_PATH = "logo.png" # 파일 확장자에 맞춰 수정 (jpg, png 등)
 if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=150)
+        st.image(LOGO_PATH, width=50)
 # 샴페인 골드 테마 & 다크 모드 호환 CSS
 st.markdown("""
     <style>
@@ -389,6 +389,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
