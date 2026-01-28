@@ -40,7 +40,7 @@ st.markdown(f"""
             z-index: 1;
         }}
 
-        /* 1. 헤더 우측 모든 요소(버튼, 링크, 텍스트) 화이트 강제 적용 */
+        /* 1. 헤더 우측요소 화이트 강제 적용 */
         header[data-testid="stHeader"] button, 
         header[data-testid="stHeader"] a, 
         header[data-testid="stHeader"] span,
@@ -421,6 +421,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
