@@ -22,22 +22,6 @@ st.markdown("""
             background-color: #9F896C !important;
         }
 
-        /* 헤더 내부에 로고 강제 삽입 */
-        header[data-testid="stHeader"]::before {
-            content: "";
-            position: absolute;
-            left: 20px; /* 좌측 여백 */
-            top: 50%; /* 중앙 정렬 */
-            transform: translateY(-50%);
-            width: 120px; /* 로고 가로 크기 */
-            height: 35px; /* 로고 세로 크기 */
-            background-image: url("{https://github.com/jonghyukkwon/Safety-Check-System/blob/main/logo.png?raw=true}");
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: left center;
-            z-index: 1;
-        }
-        
         /* 헤더 아이콘 색상 (화이트) */
         header[data-testid="stHeader"] svg {
             fill: white !important;
@@ -401,6 +385,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
