@@ -40,25 +40,7 @@ st.markdown(f"""
             z-index: 1;
         }}
 
-       /* 1. 헤더 우측 버튼/링크 내의 모든 그래픽 요소를 흰색으로 강제 반전 */
-        header[data-testid="stHeader"] button img,
-        header[data-testid="stHeader"] button svg,
-        header[data-testid="stHeader"] a img,
-        header[data-testid="stHeader"] a svg,
-        header[data-testid="stHeader"] [data-testid="stAppDeployButton"] svg {{
-            filter: brightness(0) invert(1) !important;
-            fill: white !important;
-            color: white !important;
-        }}
-
-        /* 2. 텍스트 요소(Share 등)도 화이트 고정 */
-        header[data-testid="stHeader"] button p,
-        header[data-testid="stHeader"] a p,
-        header[data-testid="stHeader"] span {{
-            color: white !important;
-        }}
-
-        /* 3. 아이콘에 마우스를 올렸을 때 배경색 (샴페인 골드와 어울리는 연한 흰색) */
+        /* 아이콘에 마우스를 올렸을 때 배경색 (샴페인 골드와 어울리는 연한 흰색) */
         header[data-testid="stHeader"] button:hover {{
             background-color: rgba(255, 255, 255, 0.2) !important;
         }}
@@ -421,6 +403,7 @@ with main_tab2:
                     except Exception as e:
                         st.error(f"오류: {e}")
                         if os.path.exists(temp_pdf): os.remove(temp_pdf)
+
 
 
 
